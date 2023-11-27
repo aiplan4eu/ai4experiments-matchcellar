@@ -1,0 +1,231 @@
+from functools import partial
+import re
+
+import justpy as jp
+
+from gui import Gui, Mode
+
+LEFT_MARGIN, RIGHT_MARGIN = " margin-left: 10px; ", " margin-right: 20px; "
+
+TITLE_DIV_CLASS = "grid justify-between gap-2 grid-cols-3"
+TITLE_DIV_STYLE = "grid-template-columns: auto auto auto; margin-top: 15px;" + LEFT_MARGIN + RIGHT_MARGIN
+
+TITLE_TEXT_DIV_STYLE = "font-size: 80px; text-align: center; text-weight: bold;"
+
+DESCRIPTION_STYLE = "margin-top: 15px; font-size: 16px;" + LEFT_MARGIN + RIGHT_MARGIN
+DESCRIPTION_TEXT = """
+Travelling demo: this demo allows you to create and navigate a map. The text to the left of the buttons specifies the precise behavior of the button itself:
+ * Add Locations(N): adds N locations to the map, in numerical order.
+ * Remove Locations(N): removes the last N locations from the map; if the start/destination is one of those it will be randomly reassigned.
+ * Add Connection(N, M): adds the connection between the L_N and L_M.
+ * Remove Connection(N, M): removes the connection between L_N and L_M.
+ * Set Start(N): sets L_N as the starting location; the starting location is represented in GREEN.
+ * Set Destination(N): sets L_N as the destination; the destination is represented in RED.
+ * Randomize Graph(N, M): creates a new map with N locations, M random connections, a random Start and a random Destination.
+ * RESET: restores the map to it's initial configuration.
+ * NAVIGATE: prints a plan to go from the starting location to the destination; following the given map.
+"""
+SINGLE_DESCRIPTION_STYLE = LEFT_MARGIN + RIGHT_MARGIN
+
+
+MAIN_BODY_DIV_CLASS = "grid justify-between grid-cols-3 gap-7"
+MAIN_BODY_DIV_STYLE = "grid-template-columns: max-content 45% 0.9fr; column-gap: 15px; margin-top: 15px;" + LEFT_MARGIN + RIGHT_MARGIN
+# MAIN_BODY_DIV_STYLE = "grid-template-columns: minmax(max-content, 25%) minmax(max-content, 25%) 10px minmax(max-content, 33%); width: 100vw; margin-top: 15px;" + LEFT_MARGIN + RIGHT_MARGIN
+
+ACTIONS_DIV_CLASS = "grid"
+# Setting height to 0 it'sa trick to solve the problem of the goal div changing size
+ACTIONS_DIV_STYLE = f"grid-template-columns: auto auto; font-size: 30px; font-weight: semibold; height: 0px;"
+
+INPUT_DESCRIPTION_P_CLASS = ""
+INPUT_DESCRIPTION_P_STYLE = "font-size: 16px; font-weight: normal; margin-top: 10px;"
+
+TEXT_WIDTH = 100 # px
+COL_GAP = 4 # px
+TEXT_INPUT_P_CLASS = ""
+TEXT_INPUT_P_STYLE = f"font-weight: normal; font-size: 16px; border: 0.9px solid #000; background-color: #e1eff7; padding: 5px; width: {TEXT_WIDTH}px; margin-top: 5px; margin-left: 5px;"
+
+ADD_BUTTON_CLASS = "bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-transparent rounded m-2"
+ADD_BUTTON_STYLE = f"font-weight: semibold; font-size: 20px; width: {TEXT_WIDTH}px; margin-top: 5px;"
+
+GOALS_DIV_CLASS = ""
+GOALS_DIV_STYLE = "font-size: 30px; font-weight: semibold; height: 0px;"
+
+CLEAR_SOLVE_BUTTONS_DIV_CLASS = "flex grid-cols-2"
+CLEAR_SOLVE_BUTTONS_DIV_STYLE = f"column-gap: {COL_GAP}px;"
+
+CLEAR_SOLVE_BUTTONS_CLASS = ADD_BUTTON_CLASS
+CLEAR_SOLVE_BUTTONS_STYLE = "font-weight: semibold; font-size: 20px;"
+
+PLAN_DIV_CLASS = ""
+PLAN_DIV_STYLE = f"font-size: 30px; font-weight: semibold;"
+
+PLAN_PART_P_CLASS = ""
+PLAN_PART_P_STYLE = f"font-weight: normal; font-size: 18px;"
+
+
+def main_page(gui: Gui):
+    wp = jp.WebPage(delete_flag = False)
+    wp.page_type = 'main'
+    title_div = jp.Div(
+        a=wp,
+        classes=TITLE_DIV_CLASS,
+        style=TITLE_DIV_STYLE,
+    )
+    fbk_logo_div = jp.Div(
+        a=title_div,
+        # text="FBK LOGO",
+        # style="font-size: 30px;",
+        style="height: 160px;",
+    )
+    fbk_logo = jp.Img(
+        src="/static/logos/fbk.png",
+        a=fbk_logo_div,
+        classes="w3-image",
+        # style="height: 100%; length: auto;",
+    )
+    title_text_div = jp.Div(
+        a=title_div,
+        text="MATCHCELLAR",
+        style=TITLE_TEXT_DIV_STYLE,
+    )
+    unified_planning_logo_div = jp.Div(
+        a=title_div,
+        style="height: 160px;",
+    )
+    unified_planning = jp.Img(
+        src="/static/logos/unified_planning_logo.png",
+        a=unified_planning_logo_div,
+        classes="w3-image",
+        style="max-width: 100%; height: 160px;"
+    )
+
+    description_div = jp.Div(
+        a=wp,
+        style=DESCRIPTION_STYLE,
+    )
+    for single_desc in DESCRIPTION_TEXT.split("\n"):
+        description_paragraph = jp.P(
+            a=description_div,
+            style=SINGLE_DESCRIPTION_STYLE,
+            text=single_desc,
+        )
+
+    main_body_div = jp.Div(
+        a=wp,
+        classes=MAIN_BODY_DIV_CLASS,
+        style=MAIN_BODY_DIV_STYLE,
+    )
+
+    actions_div = jp.Div(
+        a=main_body_div,
+        text="ACTIONS:",
+        classes=ACTIONS_DIV_CLASS,
+        style=ACTIONS_DIV_STYLE,
+    )
+
+    # Useless paragprah, added just as a place-holder
+    _ = jp.P(
+        a=actions_div,
+        text="",
+    )
+
+    jp_components = {}
+
+    _ = jp.P(
+        a=actions_div,
+        text="How many matches?",
+        classes=INPUT_DESCRIPTION_P_CLASS,
+        style=INPUT_DESCRIPTION_P_STYLE
+    )
+    number_of_matches_text = jp.Input(
+        a=actions_div,
+        classes=TEXT_INPUT_P_CLASS,
+        style=TEXT_INPUT_P_STYLE,
+    )
+    jp_components["n_match"] = number_of_matches_text
+
+    _ = jp.P(
+        a=actions_div,
+        text="How long does a match last?",
+        classes=INPUT_DESCRIPTION_P_CLASS,
+        style=INPUT_DESCRIPTION_P_STYLE
+    )
+    match_duration_text = jp.Input(
+        a=actions_div,
+        classes=TEXT_INPUT_P_CLASS,
+        style=TEXT_INPUT_P_STYLE,
+    )
+    jp_components["d_match"] = match_duration_text
+
+    _ = jp.P(
+        a=actions_div,
+        text="How many fuses?",
+        classes=INPUT_DESCRIPTION_P_CLASS,
+        style=INPUT_DESCRIPTION_P_STYLE
+    )
+    number_of_fuses_text = jp.Input(
+        a=actions_div,
+        classes=TEXT_INPUT_P_CLASS,
+        style=TEXT_INPUT_P_STYLE,
+    )
+    jp_components["n_fuse"] = number_of_fuses_text
+
+    _ = jp.P(
+        a=actions_div,
+        text="How long does it take to change a fuse?",
+        classes=INPUT_DESCRIPTION_P_CLASS,
+        style=INPUT_DESCRIPTION_P_STYLE
+    )
+    fuse_duration_text = jp.Input(
+        a=actions_div,
+        classes=TEXT_INPUT_P_CLASS,
+        style=TEXT_INPUT_P_STYLE,
+    )
+    jp_components["d_fuse"] = fuse_duration_text
+
+    gui.jp_components = jp_components
+
+    reset = jp.Input(
+        a=actions_div,
+        value="RESET",
+        type="submit",
+        classes=ADD_BUTTON_CLASS,
+        style=ADD_BUTTON_STYLE,
+    )
+    reset.on('click', gui.clear_activities_click)
+    solve = jp.Input(
+        a=actions_div,
+        value="NAVIGATE",
+        type="submit",
+        classes=ADD_BUTTON_CLASS,
+        style=ADD_BUTTON_STYLE,
+    )
+    solve.on('click', gui.generate_problem_click)
+
+    goals_div = jp.Div(
+        a=main_body_div,
+        text="GRAPH:",
+        classes=GOALS_DIV_CLASS,
+        style=GOALS_DIV_STYLE,
+    )
+
+    graph_image_div = jp.Div(
+        a=goals_div,
+        classes="",
+        style="margin-top: 0px;",
+    )
+    gui.graph_image_div = graph_image_div
+
+    gui.display_graph()
+
+    plan_div = jp.Div(
+        a=main_body_div,
+        text="PLAN:",
+        classes=PLAN_DIV_CLASS,
+        style=PLAN_DIV_STYLE,
+    )
+    gui.plan_div = plan_div
+
+    gui.update_planning_execution()
+
+    return wp
