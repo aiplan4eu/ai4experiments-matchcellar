@@ -93,7 +93,7 @@ class Gui():
                 if self.mode == Mode.GENERATING_PROBLEM:
                     single_p = jp.P(
                         a=self.plan_div,
-                        text="No plan found; The start is not connected to the destination!",
+                        text="No plan found; Can't change all the fuses with those matches!",
                         classes=PLAN_PART_P_CLASS,
                         style=PLAN_PART_P_STYLE,
                     )
@@ -107,7 +107,7 @@ class Gui():
             else:
                 single_p = jp.P(
                     a=self.plan_div,
-                    text="Modify graph and press NAVIGATE!",
+                    text="Modify graph and press SOLVE!",
                     classes=PLAN_PART_P_CLASS,
                     style=PLAN_PART_P_STYLE,
                 )
@@ -118,20 +118,8 @@ class Gui():
             self.display_graph()
 
     def clear_activities_click(self, msg):
-        # TODO
-        pass
-        # self.logger.info("Clearing")
-        # if self.mode == Mode.GENERATING_PROBLEM:
-        #     self.graph = Graph()
-        #     assert N_STARTING_LOCATIONS > 1
-        #     self.add_locations_to_graph(N_STARTING_LOCATIONS)
-
-        #     self.start = "L_1"
-        #     self.destination = f"L_{N_STARTING_LOCATIONS}"
-
-        #     self.plan_expected = False
-        #     self.display_graph(True)
-        #     self.update_planning_execution()
+        for jp_start_text in self.jp_components.values():
+            jp_start_text.value = ""
 
     def show_gui_thread(self):
         from main_page import main_page

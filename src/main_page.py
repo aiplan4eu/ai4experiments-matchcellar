@@ -1,6 +1,3 @@
-from functools import partial
-import re
-
 import justpy as jp
 
 from gui import Gui, Mode
@@ -14,16 +11,16 @@ TITLE_TEXT_DIV_STYLE = "font-size: 80px; text-align: center; text-weight: bold;"
 
 DESCRIPTION_STYLE = "margin-top: 15px; font-size: 16px;" + LEFT_MARGIN + RIGHT_MARGIN
 DESCRIPTION_TEXT = """
-Travelling demo: this demo allows you to create and navigate a map. The text to the left of the buttons specifies the precise behavior of the button itself:
- * Add Locations(N): adds N locations to the map, in numerical order.
- * Remove Locations(N): removes the last N locations from the map; if the start/destination is one of those it will be randomly reassigned.
- * Add Connection(N, M): adds the connection between the L_N and L_M.
- * Remove Connection(N, M): removes the connection between L_N and L_M.
- * Set Start(N): sets L_N as the starting location; the starting location is represented in GREEN.
- * Set Destination(N): sets L_N as the destination; the destination is represented in RED.
- * Randomize Graph(N, M): creates a new map with N locations, M random connections, a random Start and a random Destination.
- * RESET: restores the map to it's initial configuration.
- * NAVIGATE: prints a plan to go from the starting location to the destination; following the given map.
+Matchcellar demo: The problem of this demo is a classical in temporal planning; you have X fuses to change.
+You can change only one at a time, and to change a fuse you need light. To create light, you need to light a match.
+But a match has a limited duration in time.
+Here you specify:
+ * How many matches you have
+ * How long does a match lasts
+ * How many fuses you have to change
+ * How much you take to change a fuse
+After you press SOLVE you will see if the selected number of matches is enough to change all the fuses;
+and eventually, the time schedule to change all the fuses.
 """
 SINGLE_DESCRIPTION_STYLE = LEFT_MARGIN + RIGHT_MARGIN
 
@@ -118,7 +115,7 @@ def main_page(gui: Gui):
 
     actions_div = jp.Div(
         a=main_body_div,
-        text="ACTIONS:",
+        text="PROBLEM PARAMETERS:",
         classes=ACTIONS_DIV_CLASS,
         style=ACTIONS_DIV_STYLE,
     )
@@ -195,7 +192,7 @@ def main_page(gui: Gui):
     reset.on('click', gui.clear_activities_click)
     solve = jp.Input(
         a=actions_div,
-        value="NAVIGATE",
+        value="SOLVE",
         type="submit",
         classes=ADD_BUTTON_CLASS,
         style=ADD_BUTTON_STYLE,
@@ -204,7 +201,7 @@ def main_page(gui: Gui):
 
     goals_div = jp.Div(
         a=main_body_div,
-        text="GRAPH:",
+        text="PLAN REPRESENTATION:",
         classes=GOALS_DIV_CLASS,
         style=GOALS_DIV_STYLE,
     )
@@ -220,7 +217,7 @@ def main_page(gui: Gui):
 
     plan_div = jp.Div(
         a=main_body_div,
-        text="PLAN:",
+        text="PLAN DESCRIPTION:",
         classes=PLAN_DIV_CLASS,
         style=PLAN_DIV_STYLE,
     )
